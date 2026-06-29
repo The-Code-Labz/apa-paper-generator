@@ -1,0 +1,6 @@
+.env
+apa.env
+.venv/
+__pycache__/
+*.pyc
+static/*.docx

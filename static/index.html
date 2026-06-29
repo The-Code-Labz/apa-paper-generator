@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>APA Paper Generator</title>
+<style>
+  :root{
+    --bg:#ffffff; --ink:#1a1a1a; --muted:#5f6368; --line:#e2e3e6;
+    --card:#ffffff; --accent:#2a3a4a; --accent-ink:#fff; --soft:#f6f7f9;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--soft);color:var(--ink);line-height:1.5;
+  }
+  header{
+    background:var(--bg);border-bottom:1px solid var(--line);
+    padding:20px 16px;text-align:center;
+  }
+  header h1{margin:0;font-size:22px;font-weight:650;letter-spacing:-.01em}
+  header p{margin:6px 0 0;color:var(--muted);font-size:13px}
+  .wrap{max-width:920px;margin:0 auto;padding:24px 16px 60px}
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:22px;margin-bottom:22px;
+  }
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 18px}
+  @media(max-width:640px){.grid{grid-template-columns:1fr}}
+  .field{display:flex;flex-direction:column;gap:6px}
+  .field.full{grid-column:1/-1}
+  label{font-size:13px;font-weight:600;color:#34373b}
+  input,select,textarea{
+    font:inherit;font-size:14px;padding:10px 11px;border:1px solid var(--line);
+    border-radius:8px;background:#fff;color:var(--ink);width:100%;
+  }
+  input:focus,select:focus,textarea:focus{outline:2px solid #c9d3dd;border-color:#9fb0c0}
+  textarea{min-height:120px;resize:vertical}
+  .btn{
+    appearance:none;border:0;border-radius:8px;padding:12px 20px;font-size:15px;
+    font-weight:600;cursor:pointer;background:var(--accent);color:var(--accent-ink);
+  }
+  .btn:disabled{opacity:.55;cursor:not-allowed}
+  .btn.secondary{background:#eef0f3;color:#2a3a4a}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;align-items:center}
+  .hint{font-size:12px;color:var(--muted)}
+  .status{font-size:14px;color:var(--muted);margin-left:4px}
+  .spinner{
+    width:16px;height:16px;border:2px solid #c9d3dd;border-top-color:#2a3a4a;
+    border-radius:50%;display:inline-block;animation:spin .7s linear infinite;vertical-align:-3px;margin-right:6px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .err{background:#fdecec;border:1px solid #f5c2c2;color:#a02020;padding:12px 14px;border-radius:8px;font-size:14px;margin-top:14px}
+  .hidden{display:none}
+
+  /* Paper preview — APA visual style */
+  #previewWrap{margin-top:6px}
+  .paper{
+    background:#fff;border:1px solid var(--line);border-radius:6px;
+    padding:64px 72px;font-family:"Times New Roman",Georgia,serif;font-size:16px;
+    line-height:2;color:#111;
+  }
+  @media(max-width:640px){.paper{padding:32px 24px}}
+  .paper .center{text-align:center}
+  .paper .bold{font-weight:700}
+  .paper .titlepage{min-height:420px;display:flex;flex-direction:column;justify-content:center;text-align:center}
+  .paper .titlepage .title{font-weight:700;margin-bottom:32px}
+  .paper .titlepage .meta{margin:0}
+  .paper .pagebreak{border-top:1px dashed #d4d7db;margin:34px 0;text-align:center}
+  .paper .pagebreak span{background:#fff;color:#9aa0a6;font-family:sans-serif;font-size:11px;position:relative;top:-10px;padding:0 8px}
+  .paper h2.sec{font-weight:700;text-align:center;font-size:16px;margin:0}
+  .paper p{margin:0;text-indent:.5in}
+  .paper p.noindent{text-indent:0}
+  .paper .ref{text-indent:0;padding-left:.5in;text-indent:-.5in}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+  .wordcount{font-size:12px;color:var(--muted)}
+  .copied{color:#1a7f37;font-size:13px;font-weight:600}
+</style>
+</head>
+<body>
+<header>
+  <h1>APA Paper Generator</h1>
+  <p>Generate a fully formatted APA 7th edition paper · Title page · Abstract · Citations · References</p>
+</header>
+
+<div class="wrap">
+  <!-- FORM -->
+  <div class="card" id="formCard">
+    <div class="grid">
+      <div class="field full">
+        <label for="title">Paper Title</label>
+        <input id="title" placeholder="e.g. The Impact of Sleep on Academic Performance" />
+      </div>
+      <div class="field">
+        <label for="author">Author Name</label>
+        <input id="author" placeholder="Your full name" />
+      </div>
+      <div class="field">
+        <label for="course">Course Name &amp; Number</label>
+        <input id="course" placeholder="e.g. PSY-102: General Psychology" />
+      </div>
+      <div class="field">
+        <label for="instructor">Instructor Name</label>
+        <input id="instructor" placeholder="e.g. Dr. Jane Smith" />
+      </div>
+      <div class="field">
+        <label for="institution">Institution Name</label>
+        <input id="institution" value="Grand Canyon University" />
+      </div>
+      <div class="field">
+        <label for="due_date">Due Date</label>
+        <input id="due_date" placeholder="e.g. June 29, 2026" />
+      </div>
+      <div class="field">
+        <label for="word_count">Approx. Word Count</label>
+        <select id="word_count">
+          <option>500</option><option>750</option>
+          <option selected>1000</option><option>1500</option><option>2000</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="sources">Required Sources</label>
+        <select id="sources">
+          <option>2</option><option selected>3</option><option>4</option><option>5</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="tone">Tone</label>
+        <select id="tone">
+          <option selected>Academic</option><option>Reflective</option><option>Analytical</option>
+        </select>
+      </div>
+      <div class="field full">
+        <label for="prompt">Assignment Prompt / Topic</label>
+        <textarea id="prompt" placeholder="Describe what the paper should be about. Paste the assignment instructions here."></textarea>
+        <span class="hint">This is the core instruction the AI will follow.</span>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn" id="genBtn">Generate Paper</button>
+      <span class="status" id="status"></span>
+    </div>
+    <div class="err hidden" id="errBox"></div>
+  </div>
+
+  <!-- OUTPUT -->
+  <div id="outputCard" class="hidden">
+    <div class="card">
+      <div class="toolbar">
+        <button class="btn" id="docxBtn">⬇ Download as .docx</button>
+        <button class="btn secondary" id="copyBtn">Copy to Clipboard</button>
+        <button class="btn secondary" id="newBtn">New Paper</button>
+        <span class="wordcount" id="wc"></span>
+        <span class="copied hidden" id="copied">Copied!</span>
+      </div>
+      <div id="previewWrap"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let lastPaper = null;
+
+function gather(){
+  return {
+    title: $("title").value.trim(),
+    author: $("author").value.trim(),
+    course: $("course").value.trim(),
+    instructor: $("instructor").value.trim(),
+    institution: $("institution").value.trim() || "Grand Canyon University",
+    due_date: $("due_date").value.trim(),
+    prompt: $("prompt").value.trim(),
+    word_count: parseInt($("word_count").value,10),
+    sources: parseInt($("sources").value,10),
+    tone: $("tone").value
+  };
+}
+
+function validate(d){
+  if(!d.title) return "Please enter a paper title.";
+  if(!d.author) return "Please enter the author name.";
+  if(!d.prompt) return "Please enter the assignment prompt / topic.";
+  return null;
+}
+
+function esc(s){return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+
+function renderPaper(p){
+  const tp = p.title_page||{};
+  let html = '<div class="paper">';
+  // title page
+  html += '<div class="titlepage">';
+  html += `<p class="title">${esc(tp.title)}</p>`;
+  html += `<p class="meta">${esc(tp.author)}</p>`;
+  html += `<p class="meta">${esc(tp.institution)}</p>`;
+  html += `<p class="meta">${esc(tp.course)}</p>`;
+  html += `<p class="meta">${esc(tp.instructor)}</p>`;
+  html += `<p class="meta">${esc(tp.due_date)}</p>`;
+  html += '</div>';
+  // abstract
+  html += '<div class="pagebreak"><span>page break</span></div>';
+  html += '<h2 class="sec">Abstract</h2>';
+  html += `<p class="noindent">${esc(p.abstract)}</p>`;
+  // body
+  html += '<div class="pagebreak"><span>page break</span></div>';
+  html += `<p class="center bold">${esc(tp.title)}</p>`;
+  (p.sections||[]).forEach((sec,i)=>{
+    const h=(sec.heading||"").trim();
+    if(!(i===0 && h.toLowerCase()==="introduction")){
+      html += `<h2 class="sec">${esc(h)}</h2>`;
+    }
+    (sec.body||"").split(/\n\s*\n/).forEach(par=>{
+      par=par.trim(); if(par) html += `<p>${esc(par)}</p>`;
+    });
+  });
+  // references
+  html += '<div class="pagebreak"><span>page break</span></div>';
+  html += '<h2 class="sec">References</h2>';
+  (p.references||[]).forEach(r=>{ if(r&&r.trim()) html += `<p class="ref">${esc(r)}</p>`; });
+  html += '</div>';
+  $("previewWrap").innerHTML = html;
+}
+
+function plainText(p){
+  const tp=p.title_page||{};
+  let out=[];
+  out.push(tp.title,"",tp.author,tp.institution,tp.course,tp.instructor,tp.due_date,"","");
+  out.push("Abstract",p.abstract,"");
+  out.push(tp.title);
+  (p.sections||[]).forEach((s,i)=>{
+    const h=(s.heading||"").trim();
+    if(!(i===0&&h.toLowerCase()==="introduction")) out.push("",h);
+    out.push(s.body);
+  });
+  out.push("","References");
+  (p.references||[]).forEach(r=>out.push(r));
+  return out.join("\n");
+}
+
+function wordCount(p){
+  let t=(p.abstract||"")+" ";
+  (p.sections||[]).forEach(s=>t+=" "+(s.body||""));
+  return (t.trim().match(/\S+/g)||[]).length;
+}
+
+async function generate(){
+  const d=gather();
+  const v=validate(d);
+  const err=$("errBox");
+  err.classList.add("hidden");
+  if(v){ err.textContent=v; err.classList.remove("hidden"); return; }
+  $("genBtn").disabled=true;
+  $("status").innerHTML='<span class="spinner"></span>Generating your paper… this can take up to a minute.';
+  try{
+    const r=await fetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(d)});
+    if(!r.ok){const e=await r.json().catch(()=>({detail:"Request failed"})); throw new Error(e.detail||("Error "+r.status));}
+    const paper=await r.json();
+    lastPaper=paper;
+    renderPaper(paper);
+    $("wc").textContent="Body word count: ~"+wordCount(paper)+" words";
+    $("outputCard").classList.remove("hidden");
+    $("status").textContent="Done.";
+    $("outputCard").scrollIntoView({behavior:"smooth"});
+  }catch(e){
+    err.textContent=e.message||"Something went wrong."; err.classList.remove("hidden");
+    $("status").textContent="";
+  }finally{
+    $("genBtn").disabled=false;
+  }
+}
+
+async function downloadDocx(){
+  if(!lastPaper) return;
+  $("docxBtn").disabled=true;
+  try{
+    const r=await fetch("/api/docx",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(lastPaper)});
+    if(!r.ok) throw new Error("Export failed");
+    const blob=await r.blob();
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    const safe=((lastPaper.title_page||{}).title||"APA_Paper").replace(/[^A-Za-z0-9_-]+/g,"_").slice(0,60);
+    a.href=url; a.download=safe+".docx"; document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  }catch(e){ alert(e.message); }
+  finally{ $("docxBtn").disabled=false; }
+}
+
+function copyText(){
+  if(!lastPaper) return;
+  navigator.clipboard.writeText(plainText(lastPaper)).then(()=>{
+    const c=$("copied"); c.classList.remove("hidden"); setTimeout(()=>c.classList.add("hidden"),1800);
+  });
+}
+
+$("genBtn").onclick=generate;
+$("docxBtn").onclick=downloadDocx;
+$("copyBtn").onclick=copyText;
+$("newBtn").onclick=()=>{ $("outputCard").classList.add("hidden"); window.scrollTo({top:0,behavior:"smooth"}); };
+</script>
+</body>
+</html>
