@@ -1,0 +1,106 @@
+name: Build & Publish Docker Image
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Triggers
+#   push main       → build + push :latest + :sha-<short>
+#   push v*.*.*     → build + push :v1.2.3 + :latest + :sha-<short>
+#   pull_request     → build only (no push) — validates Dockerfile early
+# ─────────────────────────────────────────────────────────────────────────────
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*.*.*"
+  pull_request:
+    branches:
+      - main
+
+# Needed to write packages (GHCR) and read repo contents
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}   # the-code-labz/apa-paper-generator
+
+jobs:
+  build-and-push:
+    name: Build Docker image
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── 2. Set up QEMU (multi-arch support — linux/amd64 + linux/arm64) ──────
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      # ── 3. Set up Docker Buildx ───────────────────────────────────────────────
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # ── 4. Log in to GHCR (skip on PRs — we only build, never push) ──────────
+      - name: Log in to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── 5. Extract metadata (tags + labels) ──────────────────────────────────
+      #   push main  → ghcr.io/…:latest + ghcr.io/…:sha-<short>
+      #   push vX.Y.Z → ghcr.io/…:vX.Y.Z + ghcr.io/…:latest + ghcr.io/…:sha-<short>
+      #   PR          → ghcr.io/…:pr-<n>  (never pushed)
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            # semver tag  →  :v1.2.3
+            type=semver,pattern={{version}}
+            # semver major → :1  (only on stable releases)
+            type=semver,pattern={{major}},enable=${{ !startsWith(github.ref, 'refs/tags/v0') }}
+            # branch push  →  :latest  (main only)
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            # short SHA    →  :sha-abc1234
+            type=sha,prefix=sha-,format=short
+            # PR builds    →  :pr-42  (build only, no push)
+            type=ref,event=pr
+          labels: |
+            org.opencontainers.image.title=APA Paper Generator
+            org.opencontainers.image.description=FastAPI service for generating APA 7th edition papers
+            org.opencontainers.image.vendor=The-Code-Labz
+
+      # ── 6. Build (and push if not a PR) ──────────────────────────────────────
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          # Build for amd64 and arm64 so it runs on Apple Silicon servers too
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # Layer caching via GitHub Actions cache backend — speeds up repeat builds
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          # Build provenance + SBOM — good practice, appears in GHCR package details
+          provenance: true
+          sbom: true
+
+      # ── 7. Print image digest (useful for pinning in production) ─────────────
+      - name: Image digest
+        if: github.event_name != 'pull_request'
+        run: |
+          echo "✅ Image pushed successfully."
+          echo "Digest: ${{ steps.build-and-push.outputs.digest }}"
+          echo ""
+          echo "Pull with:"
+          echo "  docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
