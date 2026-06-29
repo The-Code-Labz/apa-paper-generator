@@ -2,9 +2,6 @@ services:
 
   # ── APA Paper Generator ───────────────────────────────────────────────────────
   apa-generator:
-    build:
-      context: .
-      dockerfile: Dockerfile
     image: ghcr.io/the-code-labz/apa-paper-generator:latest
     container_name: apa-generator
     restart: unless-stopped
