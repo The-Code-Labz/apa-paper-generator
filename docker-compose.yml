@@ -33,29 +33,6 @@ services:
       com.code-labz.service: "apa-paper-generator"
       com.code-labz.description: "APA 7th edition paper generator — FastAPI backend"
 
-  # ── Watchtower (auto-update) ──────────────────────────────────────────────────
-  # Polls the registry every 5 minutes and restarts any service whose image has
-  # been updated.  Only watches containers labelled with com.centurylinklabs.watchtower.enable=true.
-  # To opt a service in, add that label under its `labels:` block above.
-  # To disable auto-update entirely, comment out this whole service.
-  watchtower:
-    image: containrrr/watchtower:latest
-    container_name: watchtower
-    restart: unless-stopped
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      WATCHTOWER_CLEANUP: "true"                # remove old images after update
-      WATCHTOWER_POLL_INTERVAL: "300"           # check every 5 minutes
-      WATCHTOWER_LABEL_ENABLE: "true"           # only watch labelled containers
-      WATCHTOWER_NOTIFICATIONS_LEVEL: "info"
-    networks:
-      - apa-net
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "5m"
-        max-file: "2"
 
 # ── Named volumes ─────────────────────────────────────────────────────────────
 volumes:
