@@ -2,10 +2,13 @@ services:
 
   # ── APA Paper Generator ───────────────────────────────────────────────────────
   apa-generator:
+    build:
+      context: .
+      dockerfile: Dockerfile
     image: ghcr.io/the-code-labz/apa-paper-generator:latest
     container_name: apa-generator
     restart: unless-stopped
-    pull_policy: build          # always rebuild from local source on `compose up`
+    pull_policy: build          # always build from local source; image: tag is used when pushing to GHCR
     ports:
       - "8030:8000"
     env_file:
